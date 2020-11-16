@@ -1,0 +1,19 @@
+{
+  "name": "insomnia-plugin-aws-amplify-auth",
+  "version": "0.1.0",
+  "description": "Insomnia plugin to create an AWS Amplify auth cookie",
+  "author": "Matt Bise",
+  "license": "MIT",
+  "main": "./src/plugin.js",
+  "insomnia": {
+    "name": "aws-amplify-auth",
+    "displayName": "AWS Amplify Auth",
+    "description": "Insomnia plugin to create an AWS Amplify auth cookie",
+    "applications": {
+      "core": "*"
+    }
+  },
+  "dependencies": {
+    "aws-amplify": "^3.3.8"
+  }
+}
