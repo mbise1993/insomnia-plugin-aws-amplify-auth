@@ -28,6 +28,13 @@ async function runAwsAmplifyAuthCookie(context, Username, Password, Region, User
   validateArg('UserPoolId', UserPoolId);
   validateArg('WebClientId', WebClientId);
 
+  // Check for existing valid cookie first
+  const storeKey = [Username, Password, Region, UserPoolId, WebClientId].join(';');
+  const storedCookie = await context.store.getItem(storeKey);
+  if (storedCookie && storedCookie !== 'error') {
+    return storedCookie;
+  }
+
   aws.Amplify.configure({
     Auth: {
       region: Region,
@@ -38,8 +45,11 @@ async function runAwsAmplifyAuthCookie(context, Username, Password, Region, User
 
   try {
     const user = await aws.Auth.signIn(Username, Password);
-    return buildCookie(user);
+    const cookie = buildCookie(user);
+    await context.store.setItem(storeKey, cookie);
+    return cookie;
   } catch (e) {
+    await context.store.setItem(storeKey, 'error');
     return e.message;
   }
 }
