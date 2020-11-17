@@ -1,3 +1,5 @@
+![NPM](https://img.shields.io/npm/v/insomnia-plugin-aws-amplify-auth)
+
 # Insomnia Plugin - AWS Amplify Auth
 Insomnia plugin for signing in via AWS Amplify and using the resulting tokens and user data to construct an auth cookie. Useful for testing APIs secured via Amplify's server-side rendering capabilities (e.g. Next.js API routes).
 
