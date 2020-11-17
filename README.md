@@ -6,10 +6,14 @@ Insomnia plugin for signing in via AWS Amplify and using the resulting tokens an
 
 ## Usage
 
-### Installation
+### Install
+![Install](https://github.com/mbise1993/insomnia-plugin-aws-amplify-auth/raw/master/images/install.png)
 
 ### Setup Insomnia environment
+![Environment](https://github.com/mbise1993/insomnia-plugin-aws-amplify-auth/raw/master/images/environment.png)
 
 ### Configure plugin
+![Configure](https://github.com/mbise1993/insomnia-plugin-aws-amplify-auth/raw/master/images/configure.png)
 
-### Use value
+### Use value in headers
+![Headers](https://github.com/mbise1993/insomnia-plugin-aws-amplify-auth/raw/master/images/headers.png)
