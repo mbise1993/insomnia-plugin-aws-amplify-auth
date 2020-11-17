@@ -1,4 +1,9 @@
 const aws = require('aws-amplify');
+const jwtDecode = require('jwt-decode');
+
+function printLog(message) {
+  console.debug('[AWS Amplify Auth] ' + message);
+}
 
 function validateArg(name, value) {
   if (!value) {
@@ -6,19 +11,39 @@ function validateArg(name, value) {
   }
 }
 
-function buildCookie(user) {
-  const keyPrefix = user.keyPrefix;
-  const userKeyPrefix = user.keyPrefix + '.' + user.username;
+function buildCookie(userData) {
+  const {
+    keyPrefix,
+    username,
+    idToken,
+    accessToken
+  } = userData;
 
-  const lastAuthUser = keyPrefix + '.LastAuthUser=' + user.username;
-  const idToken =
-    userKeyPrefix + '.idToken=' + user.signInUserSession.idToken.jwtToken;
-  const accessToken =
-    userKeyPrefix +
-    '.accessToken=' +
-    user.signInUserSession.accessToken.jwtToken;
+  const userKeyPrefix = keyPrefix + '.' + username;
 
-  return lastAuthUser + '; ' + idToken + '; ' + accessToken;
+  const lastAuthUserField = keyPrefix + '.LastAuthUser=' + username;
+  const idTokenField = userKeyPrefix + '.idToken=' + idToken;
+  const accessTokenField = userKeyPrefix + '.accessToken=' + accessToken;
+
+  return lastAuthUserField + '; ' + idTokenField + '; ' + accessTokenField;
+}
+
+function validateToken(token) {
+  const now = Date.now().valueOf() / 1000;
+
+  try {
+    const tokenData = jwtDecode(token);
+    printLog('Validating token - now: ' + now + ', exp: ' + tokenData.exp);
+    
+    // Invalid if token has expired
+    if (typeof tokenData.exp !== 'undefined' && tokenData.exp < now) {
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 async function runAwsAmplifyAuthCookie(context, Username, Password, Region, UserPoolId, WebClientId) {
@@ -28,11 +53,21 @@ async function runAwsAmplifyAuthCookie(context, Username, Password, Region, User
   validateArg('UserPoolId', UserPoolId);
   validateArg('WebClientId', WebClientId);
 
-  // Check for existing valid cookie first
+  // Check for existing valid token first
   const storeKey = [Username, Password, Region, UserPoolId, WebClientId].join(';');
-  const storedCookie = await context.store.getItem(storeKey);
-  if (storedCookie && storedCookie !== 'error') {
-    return storedCookie;
+  const storedUserDataStr = await context.store.getItem(storeKey);
+  printLog('Retrieved stored data: ' + storedUserDataStr);
+
+  if (storedUserDataStr) {
+    const storedUserData = JSON.parse(storedUserDataStr);
+    if (storedUserData.error) {
+      printLog('Stored token error: ' + storedUserData.error);
+    } else if (!validateToken(storedUserData.accessToken)) {
+      printLog('Token expired, refreshing');
+    } else {
+      printLog('Using stored token');
+      return buildCookie(storedUserData);
+    }
   }
 
   aws.Amplify.configure({
@@ -43,13 +78,27 @@ async function runAwsAmplifyAuthCookie(context, Username, Password, Region, User
     },
   });
 
+  // If no valid existing token, sign in
   try {
     const user = await aws.Auth.signIn(Username, Password);
-    const cookie = buildCookie(user);
-    await context.store.setItem(storeKey, cookie);
-    return cookie;
+    const userData = {
+      keyPrefix: user.keyPrefix,
+      username: user.username,
+      idToken: user.signInUserSession.idToken.jwtToken,
+      accessToken: user.signInUserSession.accessToken.jwtToken,
+    };
+
+    const userDataStr = JSON.stringify(userData);
+    printLog('Storing token data: ' + userDataStr);
+    await context.store.setItem(storeKey, userDataStr);
+
+    return buildCookie(userData);
   } catch (e) {
-    await context.store.setItem(storeKey, 'error');
+    printLog('Storing error data: ' + e.message);
+    await context.store.setItem(storeKey, {
+      error: e.message,
+    });
+
     return e.message;
   }
 }
