@@ -94,10 +94,10 @@ async function runAwsAmplifyAuthCookie(context, Username, Password, Region, User
 
     return buildCookie(userData);
   } catch (e) {
-    printLog('Storing error data: ' + e.message);
-    await context.store.setItem(storeKey, {
-      error: e.message,
-    });
+    const errorData = { error: e.message };
+    const errorDataStr = JSON.stringify(errorData);
+    printLog('Storing error data: ' + errorDataStr);
+    await context.store.setItem(storeKey, errorDataStr);
 
     return e.message;
   }
