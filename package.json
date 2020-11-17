@@ -1,6 +1,6 @@
 {
   "name": "insomnia-plugin-aws-amplify-auth",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Insomnia plugin to create an auth cookie for AWS Amplify",
   "author": "Matt Bise",
   "license": "MIT",
